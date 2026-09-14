@@ -1,0 +1,32 @@
+name: Bugly 每日质量报告 (MCP -> 钉钉)
+
+on:
+  schedule:
+    # GitHub Actions 使用 UTC。北京时间 09:40 (UTC+8) = 01:40 UTC
+    - cron: "40 1 * * *"
+  workflow_dispatch: {}   # 允许在 Actions 页面手动点 Run workflow 测试
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run report (Bugly -> DingTalk)
+        env:
+          BUGLY_ACCESS_TOKEN: ${{ secrets.BUGLY_ACCESS_TOKEN }}
+          DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK }}
+          DINGTALK_SECRET: ${{ secrets.DINGTALK_SECRET }}
+          # 固定走测试机器人（与本地 --env test 一致），不切生产
+          DINGTALK_ENV: "test"
+        run: python bugly_dingtalk_report.py
