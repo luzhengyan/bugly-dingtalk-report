@@ -1,20 +1,5 @@
 name: Bugly 每日质量报告 (MCP -> 钉钉)
 
-# ============================================================
-# 触发方式：由 cron-job.org 定时触发（不再用 GitHub 自带 schedule）
-# ------------------------------------------------------------
-# 在 cron-job.org 新建任务（复用你 Daily_bug 项目同款配置）：
-#   Method  : POST
-#   URL     : https://api.github.com/repos/<owner>/<repo>/actions/workflows/bugly-report.yml/dispatches
-#             （把 <owner>/<repo> 换成你的实际仓库，如 luzhengyan/bugly-dingtalk-report）
-#   Headers : Authorization: Bearer <GitHub PAT，需 workflow 权限>
-#             Accept: application/vnd.github+json
-#             Content-Type: application/json
-#   Body    : {"ref":"main"}
-#   Schedule: 每天 09:40（cron-job.org 按你账户时区显示北京时间）
-# 也可在 GitHub Actions 页面手动点 Run workflow 测试（workflow_dispatch 入口保留）。
-# ============================================================
-
 on:
   workflow_dispatch: {}   # 允许在 Actions 页面手动点 Run workflow 测试；cron-job.org 即调用此接口
 
