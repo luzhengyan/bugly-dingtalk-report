@@ -29,4 +29,6 @@ jobs:
           DINGTALK_SECRET: ${{ secrets.DINGTALK_SECRET }}
           # 固定走测试机器人（与本地 --env test 一致），不切生产
           DINGTALK_ENV: "test"
+          # GitHub runner 默认 UTC，加这行让报告「生成时间」显示北京时间（不影响取数时间窗）
+          TZ: "Asia/Shanghai"
         run: python bugly_dingtalk_report.py
