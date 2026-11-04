@@ -212,8 +212,8 @@ def fmt_issue(issue, idx, product_id, pid):
             f"?productId={product_id}&pid={pid}")
     count = issue.get("count_current", 0)
     device = issue.get("device_count", 0)
-    # 注意 {error_info} 与 [详情] 之间必须有空格，否则会被当成引用式链接
-    return f"{idx}. {version} {error_info} [详情]({link}) 次数: {count} | 影响: {device}"
+    # 链接放行尾：异常文本后面紧跟「次数」，天然不会与 [点击跳转] 黏成引用式链接
+    return f"{idx}. {version} {error_info} 次数: {count} | 影响: {device} [点击跳转]({link})"
 
 
 def trend(r):
