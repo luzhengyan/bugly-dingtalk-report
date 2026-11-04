@@ -178,6 +178,22 @@ def get_top5(mcp, product_id):
 
 
 # ---------------- 格式化 ----------------
+# 异常文本里混入 markdown 元字符时，钉钉会把它渲染成链接/图片/粗斜体，
+# 典型症状：`!` + `[string "..."]` 变成图片语法（消息里出现加载失败的灰块），
+#           或以 `]` 结尾时与后面的 `[点击跳转](url)` 拼成引用式链接（文字黏连）。
+# 统一换成全角，保证按纯文本显示。
+# 只处理真会引发解析的字符；下划线是文件名/类名里的高频字符且单个不会触发斜体，
+# 圆括号/竖线在方括号被转义后也已无风险 —— 这些保留半角，可读性优先。
+_MD_ESCAPE = str.maketrans({
+    "[": "［", "]": "］", "!": "！", "*": "＊", "`": "｀", "~": "～",
+})
+
+
+def esc_md(s):
+    """把异常文本里的 markdown 元字符替换为全角，避免被钉钉解析。"""
+    return s.translate(_MD_ESCAPE)
+
+
 def fmt_issue(issue, idx, product_id, pid):
     msg = issue.get("exception_msg", "")
     mver = re.search(r"V\d+", msg)
@@ -188,13 +204,16 @@ def fmt_issue(issue, idx, product_id, pid):
     else:
         error_info = re.sub(r"^\s*google\s*", "", msg)
         error_info = re.sub(r"^V\d+\s*", "", error_info).strip()
-        if len(error_info) > 80:
-            error_info = error_info[:80] + "…"
+    # 先截断再转义：全角字符不影响长度语义，但避免在转义后切断实体
+    if len(error_info) > 80:
+        error_info = error_info[:80] + "…"
+    error_info = esc_md(error_info)
     link = (f"https://bugly.tds.qq.com/v2/exception/error/dashboard"
             f"?productId={product_id}&pid={pid}")
     count = issue.get("count_current", 0)
     device = issue.get("device_count", 0)
-    return f"{idx}. {version} {error_info}[点击跳转]({link}) 次数: {count} | 影响: {device}"
+    # 注意 {error_info} 与 [点击跳转] 之间必须有空格，否则会被当成引用式链接
+    return f"{idx}. {version} {error_info} [点击跳转]({link}) 次数: {count} | 影响: {device}"
 
 
 def trend(r):
@@ -301,6 +320,10 @@ def demo(push=False):
         {"exception_msg": 'google V1336 [string "views/inbox/item/InboxItem_GiftCodePopLayer.luac"]:313: attempt to compare userdata with nil', "count_current": 5, "device_count": 5},
         {"exception_msg": 'google V1336 [string "CodeGameScreenClassicRapid2Machine.luac"]:1925: attempt to index local \'node\' (a nil value)', "count_current": 4, "device_count": 4},
         {"exception_msg": 'google V1336 display.newSprite() - create sprite failure, source "#PandasPouchesSymbol/Socre_PandasPouches_3.png"', "count_current": 3, "device_count": 3},
+        # 脏数据回归样例：`!` 紧邻 [string ...] 会拼成 markdown 图片语法（线上出现过灰块占位）
+        {"exception_msg": 'google V1352 fail![string "DarkfinDominionPublicConfig.luac"] is invalid!!', "count_current": 3, "device_count": 3},
+        # 脏数据回归样例：`[xx]` 结尾会与 [点击跳转] 拼成引用式链接
+        {"exception_msg": 'google V1353 bindRef[Activity_WickedWhack] is invalid!!', "count_current": 2, "device_count": 2},
     ]
     for p in PRODUCTS:
         report = build_report(
