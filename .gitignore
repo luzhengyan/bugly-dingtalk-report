@@ -1,3 +1,4 @@
 .workbuddy/
 report_*.md
 gen_report.py
+__pycache__/
