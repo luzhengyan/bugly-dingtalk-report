@@ -65,6 +65,14 @@ def _num(v, name="value"):
         raise RuntimeError(f"[取数失败] {name} 不是数字: {v!r}")
 
 
+def _int(v, name="value"):
+    """计数类字段（次数/影响设备/问题数）取整，避免 71.0 这种小数尾巴。
+
+    Bugly 对同一字段有时返回 int、有时返回 float，统一走 _num 再取整。
+    """
+    return int(round(_num(v, name)))
+
+
 def _num_opt(v, name="value"):
     """可缺省的数值：取不到时返回 None，由展示层显示「无可比数据」，不让整份报告失败。"""
     try:
@@ -203,8 +211,8 @@ def get_crash(mcp, product_id):
     return (
         _num(_dig(m, "device_ratio", "current", what="device_ratio"), "device_ratio.current") * 100,
         _num_opt(_dig(m, "device_ratio", "rate", what="device_ratio"), "device_ratio.rate"),
-        _num(_dig(m, "count_ratio", "current", what="count_ratio"), "count_ratio.current"),
-        _num(_dig(m, "device_uv", "current", what="device_uv"), "device_uv.current"),
+        _int(_dig(m, "count_ratio", "current", what="count_ratio"), "count_ratio.current"),
+        _int(_dig(m, "device_uv", "current", what="device_uv"), "device_uv.current"),
     )
 
 
